@@ -1,0 +1,107 @@
+# user/docker-compose.yml
+version: '3.8'
+
+services:
+  postgres_user:
+    image: postgres:15-alpine
+    container_name: user_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: userdb
+    volumes:
+      - ./user/init.sql:/docker-entrypoint-initdb.d/10-user-init.sql
+      - user_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d userdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres_product:
+    image: postgres:15-alpine
+    container_name: product_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: productdb
+    volumes:
+      - ./product/init.sql:/docker-entrypoint-initdb.d/20-product-init.sql
+      - product_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d productdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres_order:
+    image: postgres:15-alpine
+    container_name: order_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: orderdb
+    volumes:
+      - ./order/init.sql:/docker-entrypoint-initdb.d/30-order-init.sql
+      - order_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d orderdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  product:
+    build: product
+    container_name: product_service
+    ports:
+      - "50052:50052"
+    environment:
+      DATABASE_URL: "postgresql://user:password@postgres_product:5432/productdb?sslmode=disable"
+    depends_on:
+      postgres_product:
+        condition: service_healthy
+
+  user:
+    build: user
+    container_name: user_service
+    ports:
+      - "50051:50051"
+    environment:
+      DATABASE_URL: "postgresql://user:password@postgres_user:5432/userdb?sslmode=disable"
+    depends_on:
+      postgres_user:
+        condition: service_healthy
+
+  order:
+    build: order
+    container_name: order_service
+    ports:
+      - "50053:50053"
+    environment:
+      DATABASE_URL: "postgresql://user:password@postgres_order:5432/orderdb?sslmode=disable"
+    depends_on:
+      postgres_order:
+        condition: service_healthy
+
+  gateway:
+    build: gateway
+    container_name: gateway_service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - user
+      - product
+      - order
+
+  frontend:
+    build: ./frontend
+    container_name: frontend_service
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+
+volumes:
+  user_data:
+  product_data:
+  order_data:

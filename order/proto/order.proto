@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package order;
+
+option go_package = "./;order";
+
+import "google/protobuf/timestamp.proto";
+
+message Order {
+  int64 order_id = 1;
+  int64 user_id = 2;
+  double total = 3;
+  double final = 4;
+  bool is_shipped = 5;
+  google.protobuf.Timestamp create_date = 6;
+  repeated OrderDetail order_details = 7;
+}
+
+message OrderDetail {
+  int64 detail_id = 1;
+  int64 order_id = 2;
+  int64 product_id = 3;
+  int32 item = 4;
+  double final = 5;
+  google.protobuf.Timestamp create_date = 6;
+}
+
+message ListOrdersRequest {}
+
+message ListOrdersResponse {
+  repeated Order orders = 1;
+}
+
+service OrderService {
+  rpc ListOrders (ListOrdersRequest) returns (ListOrdersResponse);
+}
+

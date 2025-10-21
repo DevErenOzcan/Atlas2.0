@@ -1,0 +1,33 @@
+// product/proto/product.proto
+syntax = "proto3";
+
+package product;
+
+option go_package = "gateway/proto/product";
+
+// Ürün verilerini temsil eden mesaj
+message Product {
+  int64 product_id = 1;
+  string product_name = 2;
+  string description = 3;
+  int32 stock = 4;
+  double price = 5;
+  string currency = 6;
+  int64 seller_id = 7;
+  int64 category_id = 8;
+  string dimens_details = 9;
+}
+
+// Tüm ürünleri listelemek için boş istek mesajı
+message ListProductsRequest {}
+
+// Ürün listesi cevabı
+message ListProductsResponse {
+  repeated Product products = 1;
+}
+
+// Product Servisi tanımı
+service ProductService {
+  // Tüm ürünlerin verilerini listeler
+  rpc ListProducts (ListProductsRequest) returns (ListProductsResponse);
+}

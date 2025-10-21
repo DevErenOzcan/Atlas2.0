@@ -1,0 +1,40 @@
+// user/user.proto
+syntax = "proto3";
+
+package user;
+
+option go_package = "gateway/proto/user";
+
+// Kullanıcı Rolü ENUM'u
+enum UserRole {
+  KULLANICI = 0;
+  SATICI = 1;
+  YONETICI = 2;
+}
+
+// Sadece Kullanıcı tablosundaki verileri temsil eden mesaj
+message User {
+  int64 user_id = 1;
+  string email = 2;
+  string ad = 3;
+  string soyad = 4;
+  UserRole role = 5;
+  // Şifre gibi hassas bilgileri gRPC mesajında döndürmüyoruz.
+  // AddressID de sadece User tablosunda olduğu için burada tutulabilir
+  // ancak istemciye göstermek istemeyebiliriz. Şimdilik sadece User tablosundakileri yansıtıyoruz.
+  int64 address_id = 6;
+}
+
+// Tüm kullanıcıları listelemek için boş istek mesajı
+message ListUsersRequest {}
+
+// Kullanıcı listesi cevabı
+message ListUsersResponse {
+  repeated User users = 1;
+}
+
+// User Servisi tanımı
+service UserService {
+  // Tüm kullanıcıların sadece User tablosundaki verilerini listeler
+  rpc ListUsers (ListUsersRequest) returns (ListUsersResponse);
+}
