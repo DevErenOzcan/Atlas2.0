@@ -94,7 +94,7 @@ func (s *server) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.L
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Printf("Satır döngüsü hat: %v", err)
+		log.Printf("Satır döngüsü hata: %v", err)
 		return nil, fmt.Errorf("satır işleme hatası: %w", err)
 	}
 
@@ -134,7 +134,7 @@ func main() {
 
 	// Sunucuyu başlat
 	if err := s.Serve(lis); err != nil {
-		log.Fatalf("Sunucu hizmet veremedi: %v", err)
+		log.Fatalf("Sunucu hizmet vermedi: %v", err)
 	}
 }
 

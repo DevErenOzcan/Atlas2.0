@@ -10,7 +10,7 @@ const UserList = () => {
                 setUsers(response.data);
             })
             .catch(error => {
-                console.error("There was an error fetching the users!", error);
+                console.error("There was an error fetching the user!", error);
             });
     }, []);
 

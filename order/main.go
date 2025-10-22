@@ -22,7 +22,7 @@ type server struct {
 }
 
 func (s *server) ListOrders(ctx context.Context, req *pb.ListOrdersRequest) (*pb.ListOrdersResponse, error) {
-	log.Println("ListOrders isteği alındı")
+	log.Println("ListOrders isteği alındı.")
 
 	query := `
 		SELECT

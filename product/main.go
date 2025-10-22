@@ -27,7 +27,7 @@ type server struct {
 
 // ListProducts gRPC metodu
 func (s *server) ListProducts(ctx context.Context, req *pb.ListProductsRequest) (*pb.ListProductsResponse, error) {
-	log.Println("ListProducts isteği alındı")
+	log.Println("ListProducts isteği alındı.")
 
 	query := `
 		SELECT 
