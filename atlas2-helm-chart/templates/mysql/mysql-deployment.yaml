@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-mysql
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: mysql
+spec:
+  replicas: {{ .Values.mysql.replicaCount }}
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: "{{ .Values.mysql.image.repository }}:{{ .Values.mysql.image.tag }}"
+          imagePullPolicy: {{ .Values.mysql.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.mysql.service.port }}
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: DB_ROOT_PASSWORD
+            - name: MYSQL_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-config
+                  key: DB_NAME
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: DB_USER
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secret
+                  key: DB_PASSWORD
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+            - name: mysql-init-script
+              mountPath: /docker-entrypoint-initdb.d
+          livenessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "localhost"]
+            initialDelaySeconds: {{ .Values.mysql.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.mysql.probes.liveness.periodSeconds }}
+          readinessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "localhost"]
+            initialDelaySeconds: {{ .Values.mysql.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.mysql.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.mysql.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.mysql.probes.readiness.failureThreshold }}
+      volumes:
+        {{- if .Values.mysql.persistence.enabled }}
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-mysql-pvc
+        {{- end }}
+        - name: mysql-init-script
+          configMap:
+            name: {{ .Release.Name }}-mysql-init

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-flask-analytics
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: flask-analytics
+spec:
+  replicas: {{ .Values.flaskAnalytics.replicaCount }}
+  selector:
+    matchLabels:
+      app: flask-analytics
+  template:
+    metadata:
+      labels:
+        app: flask-analytics
+    spec:
+      containers:
+        - name: flask-analytics
+          image: "{{ .Values.flaskAnalytics.image.repository }}:{{ .Values.flaskAnalytics.image.tag }}"
+          imagePullPolicy: {{ .Values.flaskAnalytics.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.flaskAnalytics.service.port }}
+          env:
+            - name: PROMETHEUS_URL
+              value: "http://{{ .Release.Name }}-{{ .Values.flaskAnalytics.prometheus.serviceName }}:{{ .Values.flaskAnalytics.prometheus.port }}/prometheus"
+            - name: OLLAMA_URL
+              value: "http://{{ .Release.Name }}-{{ .Values.flaskAnalytics.ollama.serviceName }}:{{ .Values.flaskAnalytics.ollama.port }}"
+            - name: OLLAMA_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-config
+                  key: OLLAMA_MODEL
+          resources:
+          {{- toYaml .Values.flaskAnalytics.resources | nindent 10 }}

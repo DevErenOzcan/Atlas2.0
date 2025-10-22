@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-ollama
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: ollama
+spec:
+  replicas: {{ .Values.ollama.replicaCount }}
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+        - name: ollama
+          image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
+          imagePullPolicy: {{ .Values.ollama.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.ollama.service.port }}
+              name: http
+          env:
+            - name: OLLAMA_HOST
+              value: {{ .Values.ollama.env.host | quote }}
+            - name: OLLAMA_MODEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-config
+                  key: OLLAMA_MODEL
+          volumeMounts:
+            - name: ollama-storage
+              mountPath: /root/.ollama
+        {{- if .Values.ollama.pullModel.enabled }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    echo "Waiting for ollama daemon..."
+                    until OLLAMA_HOST=127.0.0.1 ollama list >/dev/null 2>&1; do sleep 2; done
+                    echo "Pulling model ${OLLAMA_MODEL}..."
+                    OLLAMA_HOST=127.0.0.1 ollama pull "${OLLAMA_MODEL}" || exit 1
+                    echo "Model pull completed."
+        {{- end }}
+          startupProbe:
+            httpGet:
+              path: /api/tags
+              port: {{ .Values.ollama.service.port }}
+            failureThreshold: {{ .Values.ollama.probes.startup.failureThreshold }}
+            periodSeconds: {{ .Values.ollama.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.ollama.probes.startup.timeoutSeconds }}
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: {{ .Values.ollama.service.port }}
+            initialDelaySeconds: {{ .Values.ollama.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.ollama.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.ollama.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.ollama.probes.liveness.failureThreshold }}
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  OLLAMA_HOST=127.0.0.1 ollama list | grep -F "${OLLAMA_MODEL}" >/dev/null
+            initialDelaySeconds: {{ .Values.ollama.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.ollama.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.ollama.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.ollama.probes.readiness.failureThreshold }}
+      volumes:
+        - name: ollama-storage
+        {{- if .Values.ollama.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-ollama-pvc
+        {{- else }}
+          emptyDir: {}
+        {{- end }}

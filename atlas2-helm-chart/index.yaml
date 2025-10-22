@@ -1,0 +1,84 @@
+apiVersion: v1
+entries:
+  todolist-chart:
+  - apiVersion: v2
+    appVersion: 1.7.0
+    created: "2025-08-26T15:25:28.898148363+03:00"
+    description: A Helm chart for the Todolist Full Stack Application
+    digest: 30e2b0f526021deafd65a5e378b02b78f21278cba3fd98f0320315421cc9990f
+    name: atlas2-helm-chart
+    type: application
+    urls:
+    - https://deverenozcan.github.io/helm-repo/charts/todolist-chart-0.1.7.tgz
+    version: 0.1.7
+  - apiVersion: v2
+    appVersion: 1.6.0
+    created: "2025-08-26T15:25:28.896616292+03:00"
+    description: A Helm chart for the Todolist Full Stack Application
+    digest: 41f48950c282203d151c2a73ff96a241f9b35ac450144b076d2bce107d0383ff
+    name: atlas2-helm-chart
+    type: application
+    urls:
+    - https://deverenozcan.github.io/helm-repo/charts/todolist-chart-0.1.6.tgz
+    version: 0.1.6
+  - apiVersion: v2
+    appVersion: 1.5.0
+    created: "2025-08-26T15:25:28.895703424+03:00"
+    description: A Helm chart for the Todolist Full Stack Application
+    digest: ce21956588e1b9660ea034f57ca12cacd57657e4dbcfed4bfbdac16f81a17ab9
+    name: atlas2-helm-chart
+    type: application
+    urls:
+    - https://deverenozcan.github.io/helm-repo/charts/todolist-chart-0.1.5.tgz
+    version: 0.1.5
+  - apiVersion: v2
+    appVersion: 1.4.0
+    created: "2025-08-26T15:25:28.89472938+03:00"
+    description: A Helm chart for the Todolist Full Stack Application
+    digest: 9c53871afc4544408ebc659320eaf03a7c517cba26b3909a408f103ce9debb7c
+    name: atlas2-helm-chart
+    type: application
+    urls:
+    - https://deverenozcan.github.io/helm-repo/charts/todolist-chart-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v2
+    appVersion: 1.3.0
+    created: "2025-08-26T15:25:28.893785292+03:00"
+    description: A Helm chart for the Todolist Full Stack Application
+    digest: 8050d328a098b2b97dd7d9f1aa8cc1cdbe1834ea7594af2c97138e47f7a6539a
+    name: atlas2-helm-chart
+    type: application
+    urls:
+    - https://deverenozcan.github.io/helm-repo/charts/todolist-chart-0.1.3.tgz
+    version: 0.1.3
+  - apiVersion: v2
+    appVersion: 1.2.0
+    created: "2025-08-26T15:25:28.892505369+03:00"
+    description: A Helm chart for the Todolist Full Stack Application
+    digest: bc63bca7c0f80f1980eb96b7182bcb5dd5f915cacae67aa0ad7d41ba92acdc13
+    name: atlas2-helm-chart
+    type: application
+    urls:
+    - https://deverenozcan.github.io/helm-repo/charts/todolist-chart-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 1.1.0
+    created: "2025-08-26T15:25:28.891125737+03:00"
+    description: A Helm chart for the Todolist Full Stack Application
+    digest: 853d36a821bdcbcf39517c1f65a4b47c97b7f4a734a6053243c8366703ea42f3
+    name: atlas2-helm-chart
+    type: application
+    urls:
+    - https://deverenozcan.github.io/helm-repo/charts/todolist-chart-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 1.0.0
+    created: "2025-08-26T15:25:28.890175167+03:00"
+    description: A Helm chart for the Todolist Full Stack Application
+    digest: 2122a2b06fa7ccfab5e4e043a0193d3f407e089576dd4adea2802b51ba1d34b6
+    name: atlas2-helm-chart
+    type: application
+    urls:
+    - https://deverenozcan.github.io/helm-repo/charts/todolist-chart-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-08-26T15:25:28.888753475+03:00"

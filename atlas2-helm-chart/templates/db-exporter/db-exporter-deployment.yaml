@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-db-exporter
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: mysql-exporter
+spec:
+  replicas: {{ .Values.dbExporter.replicaCount }}
+  selector:
+    matchLabels:
+      app: mysql-exporter
+  template:
+    metadata:
+      labels:
+        app: mysql-exporter
+    spec:
+      containers:
+        - name: db-exporter
+          image: "{{ .Values.dbExporter.image.repository }}:{{ .Values.dbExporter.image.tag }}"
+          imagePullPolicy: {{ .Values.dbExporter.image.pullPolicy }}
+          args:
+            - "--config.my-cnf=/etc/mysql/my.cnf"
+          ports:
+            - containerPort: {{ .Values.dbExporter.service.port }}
+          volumeMounts:
+            - name: exporter-config-volume
+              mountPath: "/etc/mysql/my.cnf"
+              subPath: ".my.cnf"
+              readOnly: true
+          resources:
+            {{- toYaml .Values.dbExporter.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.dbExporter.service.port }}
+            initialDelaySeconds: {{ .Values.dbExporter.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.dbExporter.probes.liveness.periodSeconds }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.dbExporter.service.port }}
+            initialDelaySeconds: {{ .Values.dbExporter.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.dbExporter.probes.readiness.periodSeconds }}
+      volumes:
+        - name: exporter-config-volume
+          secret:
+            secretName: {{ .Release.Name }}-db-exporter-config

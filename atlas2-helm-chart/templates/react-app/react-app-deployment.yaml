@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-react-app
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: react-app
+spec:
+  replicas: {{ .Values.reactApp.replicaCount }}
+  selector:
+    matchLabels:
+      app: react-app
+  template:
+    metadata:
+      labels:
+        app: react-app
+    spec:
+      containers:
+        - name: react-app
+          image: "{{ .Values.reactApp.image.repository }}:{{ .Values.reactApp.image.tag }}"
+          imagePullPolicy: {{ .Values.reactApp.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.reactApp.service.port }}
+          env:
+            - name: REACT_APP_API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Release.Name }}-config
+                  key: REACT_APP_API_BASE_URL
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.reactApp.probes.readiness.path }}
+              port: {{ .Values.reactApp.service.port }}
+            initialDelaySeconds: {{ .Values.reactApp.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.reactApp.probes.readiness.periodSeconds }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.reactApp.probes.liveness.path }}
+              port: {{ .Values.reactApp.service.port }}
+            initialDelaySeconds: {{ .Values.reactApp.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.reactApp.probes.liveness.periodSeconds }}
