@@ -57,6 +57,7 @@ services:
       - "50052:50052"
     environment:
       DATABASE_URL: "postgresql://user:password@postgres_product:5432/productdb?sslmode=disable"
+      PORT: ":50052"
     depends_on:
       postgres_product:
         condition: service_healthy
@@ -68,6 +69,7 @@ services:
       - "50051:50051"
     environment:
       DATABASE_URL: "postgresql://user:password@postgres_user:5432/userdb?sslmode=disable"
+      PORT: ":50051"
     depends_on:
       postgres_user:
         condition: service_healthy
@@ -79,6 +81,7 @@ services:
       - "50053:50053"
     environment:
       DATABASE_URL: "postgresql://user:password@postgres_order:5432/orderdb?sslmode=disable"
+      PORT: ":50053"
     depends_on:
       postgres_order:
         condition: service_healthy
@@ -88,6 +91,10 @@ services:
     container_name: gateway_service
     ports:
       - "8080:8080"
+    environment:
+      USER_SERVICE_ADDR: "user:50051"
+      PRODUCT_SERVICE_ADDR: "product:50052"
+      ORDER_SERVICE_ADDR: "order:50053"
     depends_on:
       - user
       - product
@@ -98,6 +105,8 @@ services:
     container_name: frontend_service
     ports:
       - "3000:80"
+    environment:
+      REACT_APP_API_URL: "http://localhost:8080"
     depends_on:
       - gateway
 

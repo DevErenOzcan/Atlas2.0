@@ -16,10 +16,6 @@ import (
 	pb "order/proto"
 )
 
-const (
-	port = ":50053"
-)
-
 type server struct {
 	pb.UnimplementedOrderServiceServer
 	db *sql.DB
@@ -123,6 +119,7 @@ func main() {
 	}
 	log.Println("PostgreSQL'e başarıyla bağlanıldı!")
 
+	port := getEnv("PORT", ":50053")
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("TCP dinlenemedi: %v", err)
@@ -135,4 +132,11 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Sunucu hizmet veremedi: %v", err)
 	}
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }

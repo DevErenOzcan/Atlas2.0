@@ -19,10 +19,6 @@ import (
 	pb "product/proto"
 )
 
-const (
-	port = ":50052" // Portu user service'den farklı yap
-)
-
 // Server yapısı, gRPC metodlarını implemente eder
 type server struct {
 	pb.UnimplementedProductServiceServer
@@ -91,9 +87,7 @@ func main() {
 	// Veritabanı bağlantı dizesini ortam değişkeninden al
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		// Lokal geliştirme için varsayılan değer
-		dbURL = "postgresql://user:password@localhost:5432/userdb?sslmode=disable"
-		log.Printf("DATABASE_URL ortam değişkeni ayarlanmadı, varsayılan kullanılıyor: %s", dbURL)
+		log.Fatal("DATABASE_URL ortam değişkeni ayarlanmadı")
 	}
 
 	// Veritabanı bağlantısı
@@ -110,6 +104,7 @@ func main() {
 	log.Println("PostgreSQL'e başarıyla bağlanıldı!")
 
 	// gRPC sunucusunu başlat
+	port := getEnv("PORT", ":50052")
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("TCP dinlenemedi: %v", err)
@@ -123,4 +118,11 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Sunucu hizmet veremedi: %v", err)
 	}
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }

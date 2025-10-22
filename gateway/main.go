@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -18,7 +19,7 @@ import (
 
 func main() {
 	// gRPC bağlantıları (uygulama açılışında oluşturulur)
-	userConn, err := grpc.NewClient("user:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	userConn, err := grpc.NewClient(getEnv("USER_SERVICE_ADDR", "user:50051"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("user service'e bağlanılamadı: %v", err)
 	}
@@ -29,7 +30,7 @@ func main() {
 	}()
 	userClient := userpb.NewUserServiceClient(userConn)
 
-	productConn, err := grpc.NewClient("product:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	productConn, err := grpc.NewClient(getEnv("PRODUCT_SERVICE_ADDR", "product:50052"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("product service'e bağlanılamadı: %v", err)
 	}
@@ -40,7 +41,7 @@ func main() {
 	}()
 	productClient := productpb.NewProductServiceClient(productConn)
 
-	orderConn, err := grpc.NewClient("order:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	orderConn, err := grpc.NewClient(getEnv("ORDER_SERVICE_ADDR", "order:50053"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("order service'e bağlanılamadı: %v", err)
 	}
@@ -152,4 +153,11 @@ func corsMiddleware(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }

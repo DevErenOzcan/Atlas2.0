@@ -19,10 +19,6 @@ import (
 	pb "user/proto"
 )
 
-const (
-	port = ":50051"
-)
-
 // userRoleMap, PostgreSQL ENUM'u ile Protobuf ENUM'u arasındaki eşleşmeyi sağlar
 var userRoleMap = map[string]pb.UserRole{
 	"KULLANICI": pb.UserRole_KULLANICI,
@@ -126,6 +122,7 @@ func main() {
 	log.Println("PostgreSQL'e başarıyla bağlanıldı!")
 
 	// gRPC sunucusunu başlat
+	port := getEnv("PORT", ":50051")
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("TCP dinlenemedi: %v", err)
@@ -139,4 +136,11 @@ func main() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Sunucu hizmet veremedi: %v", err)
 	}
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
 }
