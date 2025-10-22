@@ -94,7 +94,7 @@ func (s *server) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.L
 	}
 
 	if err = rows.Err(); err != nil {
-		log.Printf("Satır döngüsü hatası: %v", err)
+		log.Printf("Satır döngüsü hat: %v", err)
 		return nil, fmt.Errorf("satır işleme hatası: %w", err)
 	}
 
