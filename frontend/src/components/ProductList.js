@@ -5,12 +5,14 @@ const ProductList = () => {
     const [products, setProducts] = useState([]);
 
     useEffect(() => {
-        api.get('/products')
+        api.get('products')
             .then(response => {
-                setProducts(response.data);
+                const data = response && response.data;
+                setProducts(Array.isArray(data) ? data : []);
             })
             .catch(error => {
                 console.error("There was an error fetching the products!", error);
+                setProducts([]);
             });
     }, []);
 

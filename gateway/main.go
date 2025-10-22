@@ -58,14 +58,24 @@ func main() {
 	r.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		handleListUsers(w, r, userClient)
 	}).Methods("GET", "OPTIONS")
+	// Also support /api prefix for k8s ingress
+	r.HandleFunc("/api/users", func(w http.ResponseWriter, r *http.Request) {
+		handleListUsers(w, r, userClient)
+	}).Methods("GET", "OPTIONS")
 
 	// Product routes
 	r.HandleFunc("/products", func(w http.ResponseWriter, r *http.Request) {
 		handleListProducts(w, r, productClient)
 	}).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/products", func(w http.ResponseWriter, r *http.Request) {
+		handleListProducts(w, r, productClient)
+	}).Methods("GET", "OPTIONS")
 
 	// Order routes
 	r.HandleFunc("/orders", func(w http.ResponseWriter, r *http.Request) {
+		handleListOrders(w, r, orderClient)
+	}).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/orders", func(w http.ResponseWriter, r *http.Request) {
 		handleListOrders(w, r, orderClient)
 	}).Methods("GET", "OPTIONS")
 

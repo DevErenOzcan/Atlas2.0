@@ -7,10 +7,12 @@ const OrderList = () => {
     useEffect(() => {
         api.get('/orders')
             .then(response => {
-                setOrders(response.data);
+                const data = response && response.data;
+                setOrders(Array.isArray(data) ? data : []);
             })
             .catch(error => {
                 console.error("There was an error fetching the orders!", error);
+                setOrders([]);
             });
     }, []);
 
@@ -28,7 +30,7 @@ const OrderList = () => {
                         <strong>Date:</strong> {new Date(order.create_date).toLocaleString()}<br/>
                         <strong>Details:</strong>
                         <ul>
-                            {order.order_details && order.order_details.map(detail => (
+                            {Array.isArray(order.order_details) && order.order_details.map(detail => (
                                 <li key={detail.detail_id}>
                                     - Product ID: {detail.product_id}, Quantity: {detail.item}, Price: {detail.final}
                                 </li>

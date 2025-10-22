@@ -7,10 +7,12 @@ const UserList = () => {
     useEffect(() => {
         api.get('/users')
             .then(response => {
-                setUsers(response.data);
+                const data = response && response.data;
+                setUsers(Array.isArray(data) ? data : []);
             })
             .catch(error => {
                 console.error("There was an error fetching the userr!", error);
+                setUsers([]);
             });
     }, []);
 
