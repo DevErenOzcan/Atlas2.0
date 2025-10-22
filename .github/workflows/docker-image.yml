@@ -1,0 +1,18 @@
+name: user service CI
+
+on:
+  push:
+    branches: [ "prod" ]
+  pull_request:
+    branches: [ "prod" ]
+
+jobs:
+
+  build:
+
+    runs-on: golang:1.22-alpine
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: docker build ./user --file Dockerfile --tag Atlas2.0-user-service:$(date +%s)
