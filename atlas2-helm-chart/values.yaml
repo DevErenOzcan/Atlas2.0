@@ -4,7 +4,7 @@ user:
   replicaCount: 1
   image:
     repository: erenozcan17/atlas2_user
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     tag: "latest"
   service:
     type: ClusterIP
@@ -22,7 +22,7 @@ product:
   replicaCount: 1
   image:
     repository: erenozcan17/atlas2_product
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     tag: "latest"
   service:
     type: ClusterIP
@@ -40,7 +40,7 @@ order:
   replicaCount: 1
   image:
     repository: erenozcan17/atlas2_order
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     tag: "latest"
   service:
     type: ClusterIP
@@ -58,7 +58,7 @@ gateway:
   replicaCount: 1
   image:
     repository: erenozcan17/atlas2_gateway
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     tag: "latest"
   service:
     type: ClusterIP
@@ -73,7 +73,7 @@ frontend:
   replicaCount: 1
   image:
     repository: erenozcan17/atlas2_frontend
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     tag: "latest"
   service:
     type: ClusterIP
