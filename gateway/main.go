@@ -21,7 +21,7 @@ func main() {
 	// gRPC bağlantıları (uygulama açılışında oluşturulur)
 	userConn, err := grpc.NewClient(getEnv("USER_SERVICE_ADDR", "user:50051"), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("user service'e bağlanılamadı.: %v", err)
+		log.Fatalf("user service'e bağlanılamadıı.: %v", err)
 	}
 	defer func() {
 		if cerr := userConn.Close(); cerr != nil {

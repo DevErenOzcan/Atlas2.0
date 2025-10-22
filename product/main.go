@@ -45,7 +45,7 @@ func (s *server) ListProducts(ctx context.Context, req *pb.ListProductsRequest) 
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
-		log.Printf("Veritabanı sorgusu hatası: %v", err)
+		log.Printf("Veritabanı sorgusu hatasıı: %v", err)
 		return nil, fmt.Errorf("ürünler listelenemedi: %w", err)
 	}
 	defer rows.Close()

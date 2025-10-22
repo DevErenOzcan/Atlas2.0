@@ -76,7 +76,7 @@ func (s *server) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.L
 
 		err := rows.Scan(&userID, &email, &ad, &soyad, &role, &addressID)
 		if err != nil {
-			log.Printf("Satır okuma hatası: %v", err)
+			log.Printf("Satır okuma hatasıı: %v", err)
 			return nil, fmt.Errorf("kullanıcı verisi okunamadı: %w", err)
 		}
 
