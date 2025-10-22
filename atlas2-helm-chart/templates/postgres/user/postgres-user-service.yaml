@@ -1,0 +1,16 @@
+{{- with .Values.postgres.user }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+  labels:
+    app: {{ .name }}
+spec:
+  ports:
+    - port: 5432
+      name: postgres
+  clusterIP: None
+  selector:
+    app: {{ .name }}
+{{- end }}
+

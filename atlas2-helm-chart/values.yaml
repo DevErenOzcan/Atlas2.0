@@ -1,353 +1,110 @@
-# Default configuration values for the atlas2-helm-chart
-# These values will be used in the configmap template
-config:
-  dbName: "todolist"
-  dbHost: "mysql-service"
-  dbPort: "3306"
-  backendPort: "8080"
-  ollamaModel: "qwen3:0.6b"
-
-
-# Secret values for the atlas2-helm-chart
-# These values will be base64 encoded by the Helm template before being applied
-# IMPORTANT: For production, use a more secure method like Vault, Sealed Secrets,
-# or pass these values via --set or a separate values file.
-secrets:
-  dbUser: "todolist_user"
-  dbPassword: "Localpass."
-  dbRootPassword: "Localpass."
-  jwtSecret: "jwtsecretkey"
-  # Credentials for the MySQL exporter (for monitoring)
-  exporterUser: "exporter"
-  exporterPassword: "exporter_password"
-
-
-# values.yaml dosyasının ilgili bölümü
-mysql:
+# Default values for user service
+user:
+  name: user
   replicaCount: 1
   image:
-    repository: "mysql"
-    tag: "8.0"
+    repository: erenozcan17/atlas2_user
     pullPolicy: IfNotPresent
+    tag: "latest"
   service:
     type: ClusterIP
-    port: 3306
-  persistence:
-    enabled: true
-    createPv: true
-    storageClassName: "manual"
-    size: 5Gi
-    reclaimPolicy: Retain
-    hostPath: /data/mysql
-  probes:
-    liveness:
-      initialDelaySeconds: 30
-      periodSeconds: 10
-    readiness:
-      initialDelaySeconds: 10
-      periodSeconds: 2
-      timeoutSeconds: 5
-      failureThreshold: 3
-  init:
-    seedData:
-      enabled: true
+    port: 50051
+  database:
+    host: "postgres-user"
+    port: 5432
+    user: "user"
+    password: "password"
+    dbname: "userdb"
 
-
-# Go API specific values
-goApi:
-  replicaCount: 2
+# Default values for product service
+product:
+  name: product
+  replicaCount: 1
   image:
-    repository: "erenozcan17/go_backend"
-    tag: "v4.2"
+    repository: erenozcan17/atlas2_product
     pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 50052
+  database:
+    host: "postgres-product"
+    port: 5432
+    user: "user"
+    password: "password"
+    dbname: "productdb"
+
+# Default values for order service
+order:
+  name: order
+  replicaCount: 1
+  image:
+    repository: erenozcan17/atlas2_order
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 50053
+  database:
+    host: "postgres-order"
+    port: 5432
+    user: "user"
+    password: "password"
+    dbname: "orderdb"
+
+# Default values for gateway service
+gateway:
+  name: gateway
+  replicaCount: 1
+  image:
+    repository: erenozcan17/atlas2_gateway
+    pullPolicy: IfNotPresent
+    tag: "latest"
   service:
     type: ClusterIP
     port: 8080
-  # Init container to wait for the database to be ready before starting the API.
-  waitForDb:
-    enabled: true
-    image:
-      repository: "mysql"
-      tag: "8.0"
+  userSvcAddr: "user:50051"
+  productSvcAddr: "product:50052"
+  orderSvcAddr: "order:50053"
 
-
-# React App specific values
-reactApp:
+# Default values for frontend service
+frontend:
+  name: frontend
   replicaCount: 1
   image:
-    repository: "erenozcan17/react_frontend"
-    tag: "v4.5"
+    repository: erenozcan17/atlas2_frontend
     pullPolicy: IfNotPresent
+    tag: "latest"
   service:
     type: ClusterIP
     port: 80
-  probes:
-    liveness:
-      path: /
-      initialDelaySeconds: 10
-      periodSeconds: 10
-    readiness:
-      path: /
-      initialDelaySeconds: 5
-      periodSeconds: 5
+  apiUrl: "http://localhost:8080"
 
-
-# Ingress specific values
+# Ingress settings
 ingress:
   enabled: true
-  className: "nginx"
-  # ZORUNLU: Bu değeri, AKS üzerindeki Ingress denetleyicinizin genel IP'sine
-  # işaret eden alan adınız ile değiştirmelisiniz.
-  # Helm kurulumu sırasında bu değeri --set ile belirtin.
-  # Örnek: --set ingress.host=todolist.YOUR_DOMAIN.com
-  host: ""
-  annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: "1200"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "1200"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "1200"
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-  tls:
-    enabled: true
-    secretName: "tls-secret"
-    createSecret: true
-  paths:
-    - path: /api
-      pathType: Prefix
-      service:
-        name: go-api-service
-        port: 8080
-    - path: /prometheus
-      pathType: Prefix
-      service:
-        name: prometheus-service
-        port: 9090
-    - path: /grafana
-      pathType: Prefix
-      service:
-        name: grafana-service
-        port: 3000
-    - path: /analytics
-      pathType: Prefix
-      service:
-        name: flask-analytics-service
-        port: 5000
-    - path: /
-      pathType: Prefix
-      service:
-        name: react-app-service
-        port: 80
+  host: kubernetes.local
 
-
-# Flask Analytics specific values
-flaskAnalytics:
-  replicaCount: 1
-  image:
-    repository: "erenozcan17/flask_analytics"
-    tag: "v3.1"
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 5000
-  prometheus:
-    serviceName: "prometheus-service"
-    port: 9090
-  ollama:
-    serviceName: "ollama-service"
-    port: 11434
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-
-
-# Ollama specific values
-ollama:
-  replicaCount: 1
-  image:
-    repository: "ollama/ollama"
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 11434
-  env:
-    host: "0.0.0.0"
-  pullModel:
-    enabled: true
-  persistence:
-    enabled: true
-    storageClassName: ""
-    size: 20Gi
-  probes:
-    startup:
-      failureThreshold: 60
-      periodSeconds: 10
-      timeoutSeconds: 5
-    liveness:
-      initialDelaySeconds: 30
-      periodSeconds: 15
-      timeoutSeconds: 5
-      failureThreshold: 5
-    readiness:
-      initialDelaySeconds: 5
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-
-
-# Prometheus specific values
-prometheus:
-  replicaCount: 1
-  image:
-    repository: "prom/prometheus"
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 9090
-  args:
-    retention: "200h"
-    # The 'tpl' function is used in the template to render the ingress host value
-    externalUrl: "https://{{ .Values.ingress.host }}/prometheus"
-    routePrefix: "/prometheus"
-  config:
-    global:
-      scrape_interval: "15s"
-      evaluation_interval: "15s"
-    frontendScrape:
-      # Scheme for scraping the frontend via blackbox exporter. 'http' for cluster-internal.
-      scheme: "http"
-  # Persistence settings for Prometheus time-series data
-  persistence:
-    enabled: false # Set to true to enable persistent storage
-    storageClassName: "manual"
-    size: 8Gi
-  resources:
-    requests:
-      cpu: 200m
-      memory: 1000Mi
-    limits:
-      cpu: 1000m
-      memory: 2000Mi
-
-
-# Blackbox Exporter specific values
-blackboxExporter:
-  replicaCount: 1
-  image:
-    repository: "prom/blackbox-exporter"
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 9115
-  # Configuration for blackbox modules (config.yml)
-  # This YAML block will be rendered into the ConfigMap
-  config:
-    modules:
-      http_2xx:
-        prober: http
-        timeout: 5s
-        http:
-          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-          valid_status_codes: [] # probe will succeed for any 2xx status code
-          method: GET
-          no_follow_redirects: false
-          fail_if_ssl: false
-          fail_if_not_ssl: false
-          tls_config:
-            insecure_skip_verify: true # Set to true for internal probing with self-signed certs
-  resources:
-    requests:
-      cpu: 100m
-      memory: 100Mi
-    limits:
-      cpu: 200m
-      memory: 200Mi
-
-
-# DB Exporter (mysqld-exporter) specific values
-dbExporter:
-  replicaCount: 1
-  image:
-    repository: "prom/mysqld-exporter"
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 9104
-  probes:
-    liveness:
-      initialDelaySeconds: 30
-      periodSeconds: 10
-    readiness:
-      initialDelaySeconds: 5
-      periodSeconds: 5
-  resources:
-    requests:
-      cpu: 100m
-      memory: 100Mi
-    limits:
-      cpu: 200m
-      memory: 200Mi
-
-
-# Node Exporter specific values
-nodeExporter:
-  image:
-    repository: "prom/node-exporter"
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 9100
-  hostNetwork: true
-  hostPID: true
-  args:
-    - '--path.rootfs=/host'
-    - '--path.procfs=/host/proc'
-    - '--path.sysfs=/host/sys'
-    - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
-  resources:
-    requests:
-      cpu: 100m
-      memory: 100Mi
-    limits:
-      cpu: 200m
-      memory: 200Mi
-  # Tolerations for the DaemonSet to run on all nodes (including masters)
-  tolerations:
-    - operator: "Exists"
-      effect: "NoSchedule"
-
-
-# grafana specific values
-grafana:
-  replicaCount: 1
-  adminPassword: "admin" # Change this for production environments
-  image:
-    repository: "grafana/grafana"
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 3000
-  config:
-    root_url: "https://{{ .Values.ingress.host }}/grafana"
-    datasources:
-      url: "https://{{ .Values.ingress.host }}/prometheus"
-  persistence:
-    enabled: false
-    storageClassName: "manual"
-    size: 2Gi
-  resources:
-    requests:
-      memory: "128Mi"
-      cpu: "100m"
-    limits:
-      memory: "512Mi"
-      cpu: "500m"
+# Default values for postgresql databases
+postgres:
+  user:
+    name: postgres-user
+    image: postgres:15-alpine
+    user: user
+    password: password
+    dbname: userdb
+    storage: 1Gi
+  product:
+    name: postgres-product
+    image: postgres:15-alpine
+    user: user
+    password: password
+    dbname: productdb
+    storage: 1Gi
+  order:
+    name: postgres-order
+    image: postgres:15-alpine
+    user: user
+    password: password
+    dbname: orderdb
+    storage: 1Gi
