@@ -49,7 +49,7 @@
       "fieldConfig": { "defaults": { "mappings": [ { "type": "value", "options": { "0": {"text": "DOWN"}, "1": {"text": "UP"} } } ],
         "thresholds": { "steps": [ {"color": "red"}, {"color": "green", "value": 1} ] } } },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "orientation": "auto", "textMode": "auto" },
-      "targets": [ { "refId": "A", "expr": "up{job=\"user\"}" } ] },
+      "targets": [ { "refId": "A", "expr": "min(up{job=\"user\"})" } ] },
 
     { "type": "stat", "title": "Product Service Up", "id": 3,
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -57,7 +57,7 @@
       "fieldConfig": { "defaults": { "mappings": [ { "type": "value", "options": { "0": {"text": "DOWN"}, "1": {"text": "UP"} } } ],
         "thresholds": { "steps": [ {"color": "red"}, {"color": "green", "value": 1} ] } } },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
-      "targets": [ { "refId": "A", "expr": "up{job=\"product\"}" } ] },
+      "targets": [ { "refId": "A", "expr": "min(up{job=\"product\"})" } ] },
 
     { "type": "stat", "title": "Order Service Up", "id": 4,
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -65,7 +65,7 @@
       "fieldConfig": { "defaults": { "mappings": [ { "type": "value", "options": { "0": {"text": "DOWN"}, "1": {"text": "UP"} } } ],
         "thresholds": { "steps": [ {"color": "red"}, {"color": "green", "value": 1} ] } } },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
-      "targets": [ { "refId": "A", "expr": "up{job=\"order\"}" } ] },
+      "targets": [ { "refId": "A", "expr": "min(up{job=\"order\"})" } ] },
 
     { "type": "stat", "title": "Gateway Up", "id": 5,
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -73,7 +73,7 @@
       "fieldConfig": { "defaults": { "mappings": [ { "type": "value", "options": { "0": {"text": "DOWN"}, "1": {"text": "UP"} } } ],
         "thresholds": { "steps": [ {"color": "red"}, {"color": "green", "value": 1} ] } } },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
-      "targets": [ { "refId": "A", "expr": "up{job=\"gateway\"}" } ] },
+      "targets": [ { "refId": "A", "expr": "min(up{job=\"gateway\"})" } ] },
 
     { "type": "row", "title": "gRPC Traffic", "id": 6, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 }, "datasource": { "type": "prometheus", "uid": "prometheus" } },
 
