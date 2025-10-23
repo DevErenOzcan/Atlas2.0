@@ -11,8 +11,8 @@ RUN go mod download
 # Tüm kaynak kodunu kopyala
 COPY . .
 
-# go.sum değişiklikleri için tekrar indir
-RUN go mod download
+# Bağımlılıkları ve go.sum girişlerini düzenle
+RUN go mod tidy
 
 # Servisi derle
 RUN go build -o /user_service ./main.go
