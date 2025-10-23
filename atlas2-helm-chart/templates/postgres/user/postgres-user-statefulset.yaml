@@ -36,6 +36,19 @@ spec:
               mountPath: /var/lib/postgresql/data
             - name: init-sql
               mountPath: /docker-entrypoint-initdb.d
+        {{- if .exporter.enabled }}
+        - name: postgres-exporter
+          image: {{ .exporter.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATA_SOURCE_NAME
+              value: postgresql://{{ .user }}:{{ .password }}@127.0.0.1:5432/{{ .dbname }}?sslmode=disable
+          ports:
+            - name: metrics
+              containerPort: {{ .exporter.port | default 9187 }}
+          args:
+            - "--web.listen-address=:{{ .exporter.port | default 9187 }}"
+        {{- end }}
       volumes:
         - name: init-sql
           configMap:

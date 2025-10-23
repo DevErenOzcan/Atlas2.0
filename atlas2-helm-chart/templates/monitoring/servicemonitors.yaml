@@ -1,0 +1,177 @@
+{{- /* ServiceMonitor resources for scraping metrics via Prometheus Operator */ -}}
+{{- $root := . -}}
+
+{{- with .Values.user }}
+{{- if and .metrics.enabled .metrics.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "atlas2-helm-chart.fullname" $root }}-user
+  labels:
+    {{- include "atlas2-helm-chart.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: user
+    {{- range $k, $v := .metrics.serviceMonitor.labels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "atlas2-helm-chart.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: user
+  endpoints:
+    - port: metrics
+      path: {{ .metrics.path | default "/metrics" }}
+      interval: {{ .metrics.serviceMonitor.interval | default "30s" }}
+      scrapeTimeout: {{ .metrics.serviceMonitor.scrapeTimeout | default "10s" }}
+{{- end }}
+{{- end }}
+
+{{- with .Values.product }}
+{{- if and .metrics.enabled .metrics.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "atlas2-helm-chart.fullname" $root }}-product
+  labels:
+    {{- include "atlas2-helm-chart.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: product
+    {{- range $k, $v := .metrics.serviceMonitor.labels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "atlas2-helm-chart.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: product
+  endpoints:
+    - port: metrics
+      path: {{ .metrics.path | default "/metrics" }}
+      interval: {{ .metrics.serviceMonitor.interval | default "30s" }}
+      scrapeTimeout: {{ .metrics.serviceMonitor.scrapeTimeout | default "10s" }}
+{{- end }}
+{{- end }}
+
+{{- with .Values.order }}
+{{- if and .metrics.enabled .metrics.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "atlas2-helm-chart.fullname" $root }}-order
+  labels:
+    {{- include "atlas2-helm-chart.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: order
+    {{- range $k, $v := .metrics.serviceMonitor.labels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "atlas2-helm-chart.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: order
+  endpoints:
+    - port: metrics
+      path: {{ .metrics.path | default "/metrics" }}
+      interval: {{ .metrics.serviceMonitor.interval | default "30s" }}
+      scrapeTimeout: {{ .metrics.serviceMonitor.scrapeTimeout | default "10s" }}
+{{- end }}
+{{- end }}
+
+{{- with .Values.gateway }}
+{{- if and .metrics.enabled .metrics.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "atlas2-helm-chart.fullname" $root }}-gateway
+  labels:
+    {{- include "atlas2-helm-chart.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: gateway
+    {{- range $k, $v := .metrics.serviceMonitor.labels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "atlas2-helm-chart.selectorLabels" $root | nindent 6 }}
+      app.kubernetes.io/component: gateway
+  endpoints:
+    - port: http
+      path: {{ .metrics.path | default "/metrics" }}
+      interval: {{ .metrics.serviceMonitor.interval | default "30s" }}
+      scrapeTimeout: {{ .metrics.serviceMonitor.scrapeTimeout | default "10s" }}
+{{- end }}
+{{- end }}
+
+{{- with .Values.postgres.user }}
+{{- if and .exporter.enabled .exporter.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "atlas2-helm-chart.fullname" $root }}-postgres-user
+  labels:
+    {{- include "atlas2-helm-chart.labels" $root | nindent 4 }}
+    {{- range $k, $v := .exporter.serviceMonitor.labels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .exporter.serviceMonitor.interval | default "30s" }}
+      scrapeTimeout: {{ .exporter.serviceMonitor.scrapeTimeout | default "10s" }}
+{{- end }}
+{{- end }}
+
+{{- with .Values.postgres.product }}
+{{- if and .exporter.enabled .exporter.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "atlas2-helm-chart.fullname" $root }}-postgres-product
+  labels:
+    {{- include "atlas2-helm-chart.labels" $root | nindent 4 }}
+    {{- range $k, $v := .exporter.serviceMonitor.labels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .exporter.serviceMonitor.interval | default "30s" }}
+      scrapeTimeout: {{ .exporter.serviceMonitor.scrapeTimeout | default "10s" }}
+{{- end }}
+{{- end }}
+
+{{- with .Values.postgres.order }}
+{{- if and .exporter.enabled .exporter.serviceMonitor.enabled }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "atlas2-helm-chart.fullname" $root }}-postgres-order
+  labels:
+    {{- include "atlas2-helm-chart.labels" $root | nindent 4 }}
+    {{- range $k, $v := .exporter.serviceMonitor.labels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .exporter.serviceMonitor.interval | default "30s" }}
+      scrapeTimeout: {{ .exporter.serviceMonitor.scrapeTimeout | default "10s" }}
+{{- end }}
+{{- end }}

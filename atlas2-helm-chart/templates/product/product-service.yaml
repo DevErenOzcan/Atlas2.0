@@ -13,8 +13,13 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    {{- if .metrics.enabled }}
+    - port: {{ .metrics.port }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    {{- end }}
   selector:
     {{- include "atlas2-helm-chart.selectorLabels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ .name }}
 {{- end }}
-

@@ -13,6 +13,12 @@ user:
     enabled: true
     port: 9090
     path: /metrics
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels:
+        release: kube-prometheus-stack
   database:
     host: "postgres-user"
     port: 5432
@@ -35,6 +41,12 @@ product:
     enabled: true
     port: 9090
     path: /metrics
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels:
+        release: kube-prometheus-stack
   database:
     host: "postgres-product"
     port: 5432
@@ -57,6 +69,12 @@ order:
     enabled: true
     port: 9090
     path: /metrics
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels:
+        release: kube-prometheus-stack
   database:
     host: "postgres-order"
     port: 5432
@@ -78,6 +96,12 @@ gateway:
   metrics:
     enabled: true
     path: /metrics
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels:
+        release: kube-prometheus-stack
   userSvcAddr: "user:50051"
   productSvcAddr: "product:50052"
   orderSvcAddr: "order:50053"
@@ -97,7 +121,7 @@ frontend:
 # Ingress settings
 ingress:
   enabled: true
-  host: atlas2.kubernetes.local
+  host: atlas2.deverenozcan.com
 
 # Default values for postgresql databases
 postgres:
@@ -108,6 +132,16 @@ postgres:
     password: password
     dbname: userdb
     storage: 1Gi
+    exporter:
+      enabled: true
+      image: quay.io/prometheuscommunity/postgres-exporter:latest
+      port: 9187
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        scrapeTimeout: 10s
+        labels:
+          release: kube-prometheus-stack
   product:
     name: postgres-product
     image: postgres:15-alpine
@@ -115,6 +149,16 @@ postgres:
     password: password
     dbname: productdb
     storage: 1Gi
+    exporter:
+      enabled: true
+      image: quay.io/prometheuscommunity/postgres-exporter:latest
+      port: 9187
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        scrapeTimeout: 10s
+        labels:
+          release: kube-prometheus-stack
   order:
     name: postgres-order
     image: postgres:15-alpine
@@ -122,3 +166,13 @@ postgres:
     password: password
     dbname: orderdb
     storage: 1Gi
+    exporter:
+      enabled: true
+      image: quay.io/prometheuscommunity/postgres-exporter:latest
+      port: 9187
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        scrapeTimeout: 10s
+        labels:
+          release: kube-prometheus-stack

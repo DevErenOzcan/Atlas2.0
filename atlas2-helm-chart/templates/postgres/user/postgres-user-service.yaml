@@ -9,8 +9,12 @@ spec:
   ports:
     - port: 5432
       name: postgres
+    {{- if .exporter.enabled }}
+    - port: {{ .exporter.port | default 9187 }}
+      name: metrics
+      targetPort: metrics
+    {{- end }}
   clusterIP: None
   selector:
     app: {{ .name }}
 {{- end }}
-
