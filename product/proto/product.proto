@@ -26,9 +26,72 @@ message ListProductsResponse {
   repeated Product products = 1;
 }
 
+// Ürün oluşturma isteği
+message CreateProductRequest {
+  string product_name = 1;
+  string description = 2;
+  int32 stock = 3;
+  double price = 4;
+  string currency = 5;
+  int64 seller_id = 6;
+  int64 category_id = 7;
+  string dimens_details = 8;
+}
+
+// Ürün oluşturma cevabı
+message CreateProductResponse {
+  int64 product_id = 1;
+  string message = 2;
+}
+
+// Ürün güncelleme isteği
+message UpdateProductRequest {
+  int64 product_id = 1;
+  string product_name = 2;
+  string description = 3;
+  int32 stock = 4;
+  double price = 5;
+  string currency = 6;
+  int64 category_id = 7;
+  string dimens_details = 8;
+}
+
+// Ürün güncelleme cevabı
+message UpdateProductResponse {
+  string message = 1;
+}
+
+// Ürün silme isteği
+message DeleteProductRequest {
+  int64 product_id = 1;
+}
+
+// Ürün silme cevabı
+message DeleteProductResponse {
+  string message = 1;
+}
+
+// Tekil ürün getirme isteği
+message GetProductRequest {
+  int64 product_id = 1;
+}
+
+// Tekil ürün getirme cevabı
+message GetProductResponse {
+  Product product = 1;
+}
+
 // Product Servisi tanımı
 service ProductService {
   // Tüm ürünlerin verilerini listeler
   rpc ListProducts (ListProductsRequest) returns (ListProductsResponse);
+  // Tekil ürün getirir
+  rpc GetProduct (GetProductRequest) returns (GetProductResponse);
+  // Yeni ürün oluşturur
+  rpc CreateProduct (CreateProductRequest) returns (CreateProductResponse);
+  // Ürün günceller
+  rpc UpdateProduct (UpdateProductRequest) returns (UpdateProductResponse);
+  // Ürün siler (soft delete)
+  rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse);
 }
 

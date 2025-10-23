@@ -5,6 +5,8 @@ services:
   postgres_user:
     image: postgres:15-alpine
     container_name: user_db
+    ports:
+      - "5435:5432"
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -21,6 +23,8 @@ services:
   postgres_product:
     image: postgres:15-alpine
     container_name: product_db
+    ports:
+      - "5433:5432"
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
@@ -37,6 +41,8 @@ services:
   postgres_order:
     image: postgres:15-alpine
     container_name: order_db
+    ports:
+      - "5434:5432"
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password

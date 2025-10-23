@@ -1,6 +1,6 @@
 # user/Dockerfile
 # Build aşaması
-FROM golang:1.23-alpine AS builder
+FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
@@ -11,8 +11,8 @@ RUN go mod download
 # Tüm kaynak kodunu kopyala
 COPY . .
 
-# Bağımlılıkları ve go.sum girişlerini düzenle
-RUN go mod tidy
+# go.sum değişiklikleri için tekrar indir
+RUN go mod download
 
 # Servisi derle
 RUN go build -o /user_service ./main.go

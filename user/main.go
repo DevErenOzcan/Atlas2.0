@@ -7,46 +7,43 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
+	"time"
 
 	// PostgreSQL sürücüsü
 	_ "github.com/lib/pq"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/golang-jwt/jwt/v5"
+	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	_ "google.golang.org/protobuf/types/known/timestamppb"
 
 	// Protokol dosyalarından oluşturulan paket
 	pb "user/proto"
 )
 
-// userRoleMap, PostgreSQL ENUM'u ile Protobuf ENUM'u arasındaki eşleşmeyi sağlar
 var userRoleMap = map[string]pb.UserRole{
 	"KULLANICI": pb.UserRole_KULLANICI,
 	"SATICI":    pb.UserRole_SATICI,
 	"YONETICI":  pb.UserRole_YONETICI,
 }
 
-// Server yapısı, gRPC metodlarını implemente eder
 type server struct {
 	pb.UnimplementedUserServiceServer
-	db *sql.DB
+	db        *sql.DB
+	jwtSecret string
 }
 
-// UserRoleFromDB, veritabanından gelen string rolü Protobuf enum'a dönüştürür
 func UserRoleFromDB(role string) pb.UserRole {
 	if r, ok := userRoleMap[role]; ok {
 		return r
 	}
-	return pb.UserRole_KULLANICI // Varsayılan rol
+	return pb.UserRole_KULLANICI
 }
 
-// ListUsers gRPC metodu
 func (s *server) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.ListUsersResponse, error) {
-	log.Println("ListUsers isteği alındı")
-
-	// Sadece User tablosundan gerekli sütunları çek
 	query := `
 		SELECT 
 			"UserID", 
@@ -72,23 +69,22 @@ func (s *server) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.L
 			email     string
 			ad        sql.NullString
 			soyad     sql.NullString
-			role      string // Veritabanından string olarak al
+			role      string
 			addressID sql.NullInt64
 		)
 
 		err := rows.Scan(&userID, &email, &ad, &soyad, &role, &addressID)
 		if err != nil {
-			log.Printf("Satır okuma hatasıı: %v", err)
+			log.Printf("Satir okuma hatasi: %v", err)
 			return nil, fmt.Errorf("kullanıcı verisi okunamadı: %w", err)
 		}
 
 		user := &pb.User{
 			UserId: userID,
-			Email:  email,
-			Ad:     ad.String,
-			Soyad:  soyad.String,
-			Role:   UserRoleFromDB(role),
-			// AddressID NULL olabilir, kontrol et
+			Email:     email,
+			Ad:        ad.String,
+			Soyad:     soyad.String,
+			Role:      UserRoleFromDB(role),
 			AddressId: addressID.Int64,
 		}
 
@@ -103,27 +99,197 @@ func (s *server) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.L
 	return &pb.ListUsersResponse{Users: users}, nil
 }
 
+func (s *server) Register(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
+	if req.GetEmail() == "" || req.GetPassword() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Email ve şifre gereklidir")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.GetPassword()), bcrypt.DefaultCost)
+	if err != nil {
+		log.Printf("Şifre hash hatası: %v", err)
+		return nil, status.Error(codes.Internal, "Şifre işlenemedi")
+	}
+
+	query := `
+		INSERT INTO "User" ("Email", "Password", "Ad", "Soyad", "Role", "IsDeleted")
+		VALUES ($1, $2, $3, $4, 'KULLANICI', FALSE)
+		RETURNING "UserID"`
+
+	var userID int64
+	err = s.db.QueryRowContext(ctx, query, req.GetEmail(), string(hashedPassword), req.GetAd(), req.GetSoyad()).Scan(&userID)
+	if err != nil {
+		log.Printf("Kullanıcı kayıt hatası: %v", err)
+		return nil, status.Error(codes.AlreadyExists, "Bu email zaten kullanılıyor")
+	}
+
+	return &pb.RegisterResponse{
+		UserId:  userID,
+		Email:   req.GetEmail(),
+		Message: "Kayıt başarılı",
+	}, nil
+}
+
+func (s *server) Login(ctx context.Context, req *pb.LoginRequest) (*pb.LoginResponse, error) {
+	if req.GetEmail() == "" || req.GetPassword() == "" {
+		return nil, status.Error(codes.InvalidArgument, "Email ve şifre gereklidir")
+	}
+
+	query := `
+		SELECT "UserID", "Password", "Role"
+		FROM "User"
+		WHERE "Email" = $1 AND "IsDeleted" = FALSE`
+
+	var (
+		userID       int64
+		hashedPasswd string
+		role         string
+	)
+
+	err := s.db.QueryRowContext(ctx, query, req.GetEmail()).Scan(&userID, &hashedPasswd, &role)
+	if err == sql.ErrNoRows {
+		return nil, status.Error(codes.NotFound, "Kullanıcı bulunamadı")
+	} else if err != nil {
+		log.Printf("Veritabanı hatası: %v", err)
+		return nil, status.Error(codes.Internal, "Giriş yapılamadı")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPasswd), []byte(req.GetPassword()))
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "Hatalı şifre")
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id": userID,
+		"email":   req.GetEmail(),
+		"role":    role,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	})
+
+	tokenString, err := token.SignedString([]byte(s.jwtSecret))
+	if err != nil {
+		log.Printf("Token oluşturma hatası: %v", err)
+		return nil, status.Error(codes.Internal, "Token oluşturulamadı")
+	}
+
+	return &pb.LoginResponse{
+		Token:  tokenString,
+		UserId: userID,
+		Email:  req.GetEmail(),
+		Role:   UserRoleFromDB(role),
+	}, nil
+}
+
+func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+	query := `
+		SELECT "UserID", "Email", "Ad", "Soyad", "Role", "AddressID"
+		FROM "User"
+		WHERE "UserID" = $1 AND "IsDeleted" = FALSE`
+
+	var (
+		userID    int64
+		email     string
+		ad        sql.NullString
+		soyad     sql.NullString
+		role      string
+		addressID sql.NullInt64
+	)
+
+	err := s.db.QueryRowContext(ctx, query, req.GetUserId()).Scan(&userID, &email, &ad, &soyad, &role, &addressID)
+	if err == sql.ErrNoRows {
+		return nil, status.Error(codes.NotFound, "Kullanıcı bulunamadı")
+	} else if err != nil {
+		log.Printf("Veritabanı hatası: %v", err)
+		return nil, status.Error(codes.Internal, "Kullanıcı getirilemedi")
+	}
+
+	user := &pb.User{
+		UserId:    userID,
+		Email:     email,
+		Ad:        ad.String,
+		Soyad:     soyad.String,
+		Role:      UserRoleFromDB(role),
+		AddressId: addressID.Int64,
+	}
+
+	return &pb.GetUserResponse{User: user}, nil
+}
+
+func (s *server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
+	roleStr := "KULLANICI"
+	switch req.GetRole() {
+	case pb.UserRole_SATICI:
+		roleStr = "SATICI"
+	case pb.UserRole_YONETICI:
+		roleStr = "YONETICI"
+	}
+
+	query := `
+		UPDATE "User"
+		SET "Email" = $1, "Ad" = $2, "Soyad" = $3, "Role" = $4
+		WHERE "UserID" = $5 AND "IsDeleted" = FALSE`
+
+	result, err := s.db.ExecContext(ctx, query,
+		req.GetEmail(),
+		req.GetAd(),
+		req.GetSoyad(),
+		roleStr,
+		req.GetUserId(),
+	)
+
+	if err != nil {
+		log.Printf("Kullanıcı güncelleme hatası: %v", err)
+		return nil, status.Error(codes.Internal, "Kullanıcı güncellenemedi")
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return nil, status.Error(codes.NotFound, "Kullanıcı bulunamadı veya zaten silinmiş")
+	}
+
+	return &pb.UpdateUserResponse{
+		Message: "Kullanıcı başarıyla güncellendi",
+	}, nil
+}
+
+func (s *server) DeleteUser(ctx context.Context, req *pb.DeleteUserRequest) (*pb.DeleteUserResponse, error) {
+	query := `
+		UPDATE "User"
+		SET "IsDeleted" = TRUE, "DeleteDate" = NOW()
+		WHERE "UserID" = $1 AND "IsDeleted" = FALSE`
+
+	result, err := s.db.ExecContext(ctx, query, req.GetUserId())
+	if err != nil {
+		log.Printf("Kullanıcı silme hatası: %v", err)
+		return nil, status.Error(codes.Internal, "Kullanıcı silinemedi")
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return nil, status.Error(codes.NotFound, "Kullanıcı bulunamadı veya zaten silinmiş")
+	}
+
+	return &pb.DeleteUserResponse{
+		Message: "Kullanıcı başarıyla silindi",
+	}, nil
+}
+
 func main() {
-	// Veritabanı bağlantı dizesini ortam değişkeninden al
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		log.Fatal("DATABASE_URL ortam değişkeni ayarlanmadı")
 	}
 
-	// Veritabanı bağlantısı
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("Veritabanına bağlanılamadı: %v", err)
 	}
 	defer db.Close()
 
-	// Bağlantıyı kontrol et
 	if err = db.Ping(); err != nil {
 		log.Fatalf("Veritabanı bağlantısı başarısız: %v", err)
 	}
 	log.Println("PostgreSQL'e başarıyla bağlanıldı!")
 
-	// gRPC sunucusunu başlat
 	port := getEnv("PORT", ":50051")
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
@@ -131,19 +297,11 @@ func main() {
 	}
 	log.Printf("Sunucu %s adresinde dinleniyor", port)
 
+	jwtSecret := getEnv("JWT_SECRET", "default-secret-key-change-in-production")
+
 	s := grpc.NewServer()
-	pb.RegisterUserServiceServer(s, &server{db: db})
+	pb.RegisterUserServiceServer(s, &server{db: db, jwtSecret: jwtSecret})
 
-	// Prometheus metrikleri için HTTP sunucusunu başlat
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		log.Println("Metrik sunucusu :9090 adresinde başlatılıyor")
-		if err := http.ListenAndServe(":9090", nil); err != nil {
-			log.Fatalf("Metrik sunucusu başlatılamadı: %v", err)
-		}
-	}()
-
-	// Sunucuyu başlat
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Sunucu hizmet vermedi: %v", err)
 	}

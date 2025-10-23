@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
 
 	_ "github.com/lib/pq"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -24,8 +22,6 @@ type server struct {
 }
 
 func (s *server) ListOrders(ctx context.Context, req *pb.ListOrdersRequest) (*pb.ListOrdersResponse, error) {
-	log.Println("ListOrders isteği alındıı.")
-
 	query := `
 		SELECT
 			o."OrderID", o."UserID", o."Total", o."Final", o."IsShipped", o."CreateDate",
@@ -104,6 +100,84 @@ func (s *server) ListOrders(ctx context.Context, req *pb.ListOrdersRequest) (*pb
 	return &pb.ListOrdersResponse{Orders: orders}, nil
 }
 
+func (s *server) CreateOrder(ctx context.Context, req *pb.CreateOrderRequest) (*pb.CreateOrderResponse, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Printf("Transaction başlatılamadı: %v", err)
+		return nil, fmt.Errorf("sipariş oluşturulamadı: %w", err)
+	}
+	defer tx.Rollback()
+
+	var total, final float64
+	for _, item := range req.GetItems() {
+		itemTotal := float64(item.GetQuantity()) * item.GetPrice()
+		total += itemTotal
+		final += itemTotal
+	}
+
+	var orderID int64
+	orderQuery := `
+		INSERT INTO "Order" ("UserID", "Total", "Final", "IsShipped", "IsDeleted")
+		VALUES ($1, $2, $3, FALSE, FALSE)
+		RETURNING "OrderID"`
+
+	err = tx.QueryRowContext(ctx, orderQuery, req.GetUserId(), total, final).Scan(&orderID)
+	if err != nil {
+		log.Printf("Order oluşturma hatası: %v", err)
+		return nil, fmt.Errorf("sipariş kaydedilemedi: %w", err)
+	}
+
+	detailQuery := `
+		INSERT INTO "OrderDetail" ("OrderID", "ProductID", "Item", "Final", "IsDeleted")
+		VALUES ($1, $2, $3, $4, FALSE)`
+
+	for _, item := range req.GetItems() {
+		itemFinal := float64(item.GetQuantity()) * item.GetPrice()
+		_, err = tx.ExecContext(ctx, detailQuery, orderID, item.GetProductId(), item.GetQuantity(), itemFinal)
+		if err != nil {
+			log.Printf("OrderDetail oluşturma hatası: %v", err)
+			return nil, fmt.Errorf("sipariş detayı kaydedilemedi: %w", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.Printf("Transaction commit hatası: %v", err)
+		return nil, fmt.Errorf("sipariş tamamlanamadı: %w", err)
+	}
+
+	return &pb.CreateOrderResponse{
+		OrderId: orderID,
+		Message: "Sipariş başarıyla oluşturuldu",
+	}, nil
+}
+
+func (s *server) UpdateOrderStatus(ctx context.Context, req *pb.UpdateOrderStatusRequest) (*pb.UpdateOrderStatusResponse, error) {
+	query := `
+		UPDATE "Order"
+		SET "IsShipped" = $1
+		WHERE "OrderID" = $2 AND "IsDeleted" = FALSE`
+
+	result, err := s.db.ExecContext(ctx, query, req.GetIsShipped(), req.GetOrderId())
+	if err != nil {
+		log.Printf("Sipariş durumu güncelleme hatası: %v", err)
+		return nil, fmt.Errorf("sipariş durumu güncellenemedi: %w", err)
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		return nil, fmt.Errorf("sipariş bulunamadı veya zaten silinmiş")
+	}
+
+	statusText := "onaylandı"
+	if !req.GetIsShipped() {
+		statusText = "iptal edildi"
+	}
+
+	return &pb.UpdateOrderStatusResponse{
+		Message: fmt.Sprintf("Sipariş başarıyla %s", statusText),
+	}, nil
+}
+
 func main() {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
@@ -130,15 +204,6 @@ func main() {
 
 	s := grpc.NewServer()
 	pb.RegisterOrderServiceServer(s, &server{db: db})
-
-	// Prometheus metrikleri için HTTP sunucusunu başlat
-	go func() {
-		http.Handle("/metrics", promhttp.Handler())
-		log.Println("Metrik sunucusu :9090 adresinde başlatılıyor")
-		if err := http.ListenAndServe(":9090", nil); err != nil {
-			log.Fatalf("Metrik sunucusu başlatılamadı: %v", err)
-		}
-	}()
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Sunucu hizmet veremedi: %v", err)
