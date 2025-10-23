@@ -1,6 +1,6 @@
 # user/Dockerfile
 # Build aşaması
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
