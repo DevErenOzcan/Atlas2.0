@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 
 	// PostgreSQL sürücüsü
@@ -14,6 +15,10 @@ import (
 
 	"google.golang.org/grpc"
 	_ "google.golang.org/protobuf/types/known/timestamppb"
+
+	// Prometheus metrics
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	pb "product/proto"
 )
@@ -238,8 +243,24 @@ func main() {
 	}
 	log.Printf("Sunucu %s adresinde dinleniyor", port)
 
-	s := grpc.NewServer()
+	// gRPC sunucusunu Prometheus için enstrümante et
+	s := grpc.NewServer(
+		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
+		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),
+	)
 	pb.RegisterProductServiceServer(s, &server{db: db})
+	grpc_prometheus.Register(s)
+
+	// Prometheus /metrics HTTP endpoint'ini ayrı bir portta aç
+	metricsPort := getEnv("METRICS_PORT", ":9090")
+	go func() {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		log.Printf("Prometheus metrics %s/metrics adresinde yayında", metricsPort)
+		if err := http.ListenAndServe(metricsPort, mux); err != nil {
+			log.Fatalf("Metrics sunucusu başlatılamadı: %v", err)
+		}
+	}()
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Sunucu hizmet veremedi: %v", err)

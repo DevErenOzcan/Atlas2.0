@@ -17,6 +17,12 @@ spec:
       labels:
         {{- include "atlas2-helm-chart.selectorLabels" $ | nindent 8 }}
         app.kubernetes.io/component: {{ .name }}
+      {{- if .metrics.enabled }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .metrics.port | default .service.port }}"
+        prometheus.io/path: "{{ .metrics.path }}"
+      {{- end }}
     spec:
       containers:
         - name: {{ .name }}
@@ -34,4 +40,3 @@ spec:
             - name: ORDER_SERVICE_ADDR
               value: "{{ .orderSvcAddr }}"
 {{- end }}
-

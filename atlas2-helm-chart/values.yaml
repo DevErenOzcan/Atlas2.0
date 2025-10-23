@@ -9,6 +9,10 @@ user:
   service:
     type: ClusterIP
     port: 50051
+  metrics:
+    enabled: true
+    port: 9090
+    path: /metrics
   database:
     host: "postgres-user"
     port: 5432
@@ -27,6 +31,10 @@ product:
   service:
     type: ClusterIP
     port: 50052
+  metrics:
+    enabled: true
+    port: 9090
+    path: /metrics
   database:
     host: "postgres-product"
     port: 5432
@@ -45,6 +53,10 @@ order:
   service:
     type: ClusterIP
     port: 50053
+  metrics:
+    enabled: true
+    port: 9090
+    path: /metrics
   database:
     host: "postgres-order"
     port: 5432
@@ -63,6 +75,9 @@ gateway:
   service:
     type: ClusterIP
     port: 8080
+  metrics:
+    enabled: true
+    path: /metrics
   userSvcAddr: "user:50051"
   productSvcAddr: "product:50052"
   orderSvcAddr: "order:50053"

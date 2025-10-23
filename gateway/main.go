@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -55,6 +56,8 @@ func main() {
 	orderClient := orderpb.NewOrderServiceClient(orderConn)
 
 	r := mux.NewRouter()
+	// Expose Prometheus metrics endpoint at /metrics on the same HTTP server
+	r.Handle("/metrics", promhttp.Handler()).Methods("GET")
 	// Basic API info endpoint for both /api and /api/
 	r.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodOptions {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"time"
 
@@ -19,6 +20,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	_ "google.golang.org/protobuf/types/known/timestamppb"
+
+	// Prometheus metrics
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	// Protokol dosyalarından oluşturulan paket
 	pb "user/proto"
@@ -80,7 +85,7 @@ func (s *server) ListUsers(ctx context.Context, req *pb.ListUsersRequest) (*pb.L
 		}
 
 		user := &pb.User{
-			UserId: userID,
+			UserId:    userID,
 			Email:     email,
 			Ad:        ad.String,
 			Soyad:     soyad.String,
@@ -299,8 +304,24 @@ func main() {
 
 	jwtSecret := getEnv("JWT_SECRET", "default-secret-key-change-in-production")
 
-	s := grpc.NewServer()
+	// gRPC sunucusunu Prometheus için enstrümante et
+	s := grpc.NewServer(
+		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
+		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),
+	)
 	pb.RegisterUserServiceServer(s, &server{db: db, jwtSecret: jwtSecret})
+	grpc_prometheus.Register(s)
+
+	// Prometheus /metrics HTTP endpoint'ini ayrı bir portta aç
+	metricsPort := getEnv("METRICS_PORT", ":9090")
+	go func() {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		log.Printf("Prometheus metrics %s/metrics adresinde yayında", metricsPort)
+		if err := http.ListenAndServe(metricsPort, mux); err != nil {
+			log.Fatalf("Metrics sunucusu başlatılamadı: %v", err)
+		}
+	}()
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Sunucu hizmet vermedi: %v", err)

@@ -4,15 +4,11 @@ FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
-# Bağımlılıkları indirmek için go.mod ve go.sum'ı kopyala
-COPY go.mod go.sum ./
-RUN go mod download
-
 # Tüm kaynak kodunu kopyala
 COPY . .
 
-# Kaynak kopyalandıktan sonra, go.sum güncel değilse tekrar indir
 RUN go mod download
+RUN go mod tidy
 
 # Servisi derle
 RUN go build -o /product_service ./main.go
