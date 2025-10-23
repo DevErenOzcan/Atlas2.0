@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 
 	// PostgreSQL sürücüsü
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"google.golang.org/grpc"
 	_ "google.golang.org/protobuf/types/known/timestamppb"
@@ -131,6 +133,15 @@ func main() {
 
 	s := grpc.NewServer()
 	pb.RegisterUserServiceServer(s, &server{db: db})
+
+	// Prometheus metrikleri için HTTP sunucusunu başlat
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		log.Println("Metrik sunucusu :9090 adresinde başlatılıyor")
+		if err := http.ListenAndServe(":9090", nil); err != nil {
+			log.Fatalf("Metrik sunucusu başlatılamadı: %v", err)
+		}
+	}()
 
 	// Sunucuyu başlat
 	if err := s.Serve(lis); err != nil {

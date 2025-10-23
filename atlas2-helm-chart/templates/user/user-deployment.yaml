@@ -23,8 +23,11 @@ spec:
           image: "{{ .image.repository }}:{{ .image.tag }}"
           imagePullPolicy: {{ .image.pullPolicy }}
           ports:
-            - name: http
+            - name: grpc
               containerPort: {{ .service.port }}
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
               protocol: TCP
           env:
             - name: DATABASE_URL

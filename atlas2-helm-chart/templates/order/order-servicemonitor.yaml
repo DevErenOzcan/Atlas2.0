@@ -1,0 +1,18 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ .Values.order.name }}
+  labels:
+    {{- include "atlas2-helm-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ .Values.order.name }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "atlas2-helm-chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .Values.order.name }}
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 15s
+{{- end }}

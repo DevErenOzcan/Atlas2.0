@@ -10,9 +10,13 @@ spec:
   type: {{ .service.type }}
   ports:
     - port: {{ .service.port }}
-      targetPort: http
+      targetPort: grpc
       protocol: TCP
-      name: http
+      name: grpc
+    - port: 9090
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
   selector:
     {{- include "atlas2-helm-chart.selectorLabels" $ | nindent 4 }}
     app.kubernetes.io/component: {{ .name }}

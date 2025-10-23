@@ -84,6 +84,15 @@ ingress:
   enabled: true
   host: atlas2.kubernetes.local
 
+# Monitoring settings
+monitoring:
+  enabled: false
+
+# Grafana settings
+grafana:
+  dashboard:
+    enabled: false
+
 # Default values for postgresql databases
 postgres:
   user:
