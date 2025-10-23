@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
+  // Use environment variable if provided (for local/dev). In Kubernetes/Ingress use relative path so browser requests go to the same host and Ingress routes /api to the gateway service.
+  baseURL: process.env.REACT_APP_API_URL || '/api',
 });
 
 // Token'ı header'a ekle

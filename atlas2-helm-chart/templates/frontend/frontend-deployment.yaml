@@ -28,6 +28,5 @@ spec:
               protocol: TCP
           env:
             - name: REACT_APP_API_URL
-              value: "http://{{ $.Values.ingress.host }}/api"
+              value: "/api"
 {{- end }}
-

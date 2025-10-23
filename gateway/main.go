@@ -55,68 +55,89 @@ func main() {
 	orderClient := orderpb.NewOrderServiceClient(orderConn)
 
 	r := mux.NewRouter()
+	// Basic API info endpoint for both /api and /api/
+	r.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"api": "ok"})
+	}).Methods("GET", "OPTIONS")
 
-	r.HandleFunc("/auth/register", func(w http.ResponseWriter, r *http.Request) {
+	// Serve all gateway endpoints under /api so Ingress that forwards /api will match routes (e.g. /api/auth/login)
+	api := r.PathPrefix("/api").Subrouter()
+
+	api.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"api": "ok"})
+	}).Methods("GET", "OPTIONS")
+
+	api.HandleFunc("/auth/register", func(w http.ResponseWriter, r *http.Request) {
 		handleRegister(w, r, userClient)
 	}).Methods("POST", "OPTIONS")
 
-	r.HandleFunc("/auth/login", func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/auth/login", func(w http.ResponseWriter, r *http.Request) {
 		handleLogin(w, r, userClient)
 	}).Methods("POST", "OPTIONS")
 
-	r.HandleFunc("/users", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/users", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleListUsers(w, r, userClient)
 	})).Methods("GET", "OPTIONS")
 
-	r.HandleFunc("/users/{id}", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/users/{id}", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleGetUser(w, r, userClient)
 	})).Methods("GET", "OPTIONS")
 
-	r.HandleFunc("/users/{id}", adminMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/users/{id}", adminMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleUpdateUser(w, r, userClient)
 	})).Methods("PUT", "OPTIONS")
 
-	r.HandleFunc("/users/{id}", adminMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/users/{id}", adminMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleDeleteUser(w, r, userClient)
 	})).Methods("DELETE", "OPTIONS")
 
-	r.HandleFunc("/products", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/products", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleListProducts(w, r, productClient)
 	})).Methods("GET", "OPTIONS")
 
-	r.HandleFunc("/products/my", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/products/my", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleListMyProducts(w, r, productClient)
 	})).Methods("GET", "OPTIONS")
 
-	r.HandleFunc("/products/{id}", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/products/{id}", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleGetProduct(w, r, productClient)
 	})).Methods("GET", "OPTIONS")
 
-	r.HandleFunc("/products", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/products", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleCreateProduct(w, r, productClient)
 	})).Methods("POST", "OPTIONS")
 
-	r.HandleFunc("/products/{id}", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/products/{id}", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleUpdateProduct(w, r, productClient)
 	})).Methods("PUT", "OPTIONS")
 
-	r.HandleFunc("/products/{id}", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/products/{id}", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleDeleteProduct(w, r, productClient)
 	})).Methods("DELETE", "OPTIONS")
 
-	r.HandleFunc("/orders", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/orders", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleListOrders(w, r, orderClient)
 	})).Methods("GET", "OPTIONS")
 
-	r.HandleFunc("/orders/my", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/orders/my", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleListMyOrders(w, r, orderClient)
 	})).Methods("GET", "OPTIONS")
 
-	r.HandleFunc("/orders", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/orders", jwtMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleCreateOrder(w, r, orderClient)
 	})).Methods("POST", "OPTIONS")
 
-	r.HandleFunc("/orders/{id}/status", adminMiddleware(func(w http.ResponseWriter, r *http.Request) {
+	api.HandleFunc("/orders/{id}/status", adminMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		handleUpdateOrderStatus(w, r, orderClient)
 	})).Methods("PATCH", "OPTIONS")
 
