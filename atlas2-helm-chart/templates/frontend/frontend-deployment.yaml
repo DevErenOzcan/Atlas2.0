@@ -1,0 +1,32 @@
+{{- with .Values.frontend }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "atlas2-helm-chart.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "atlas2-helm-chart.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ .name }}
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "atlas2-helm-chart.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ .name }}
+  template:
+    metadata:
+      labels:
+        {{- include "atlas2-helm-chart.selectorLabels" $ | nindent 8 }}
+        app.kubernetes.io/component: {{ .name }}
+    spec:
+      containers:
+        - name: {{ .name }}
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          imagePullPolicy: {{ .image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          env:
+            - name: REACT_APP_API_URL
+              value: "/api"
+{{- end }}

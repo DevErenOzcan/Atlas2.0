@@ -1,0 +1,178 @@
+# Default values for user service
+user:
+  name: user
+  replicaCount: 1
+  image:
+    repository: erenozcan17/atlas2_user
+    pullPolicy: Always
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 50051
+  metrics:
+    enabled: true
+    port: 9090
+    path: /metrics
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels:
+        release: kube-prometheus-stack
+  database:
+    host: "postgres-user"
+    port: 5432
+    user: "user"
+    password: "password"
+    dbname: "userdb"
+
+# Default values for product service
+product:
+  name: product
+  replicaCount: 1
+  image:
+    repository: erenozcan17/atlas2_product
+    pullPolicy: Always
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 50052
+  metrics:
+    enabled: true
+    port: 9090
+    path: /metrics
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels:
+        release: kube-prometheus-stack
+  database:
+    host: "postgres-product"
+    port: 5432
+    user: "user"
+    password: "password"
+    dbname: "productdb"
+
+# Default values for order service
+order:
+  name: order
+  replicaCount: 1
+  image:
+    repository: erenozcan17/atlas2_order
+    pullPolicy: Always
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 50053
+  metrics:
+    enabled: true
+    port: 9090
+    path: /metrics
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels:
+        release: kube-prometheus-stack
+  database:
+    host: "postgres-order"
+    port: 5432
+    user: "user"
+    password: "password"
+    dbname: "orderdb"
+
+# Default values for gateway service
+gateway:
+  name: gateway
+  replicaCount: 1
+  image:
+    repository: erenozcan17/atlas2_gateway
+    pullPolicy: Always
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8080
+  metrics:
+    enabled: true
+    path: /metrics
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+      scrapeTimeout: 10s
+      labels:
+        release: kube-prometheus-stack
+  userSvcAddr: "user:50051"
+  productSvcAddr: "product:50052"
+  orderSvcAddr: "order:50053"
+
+# Default values for frontend service
+frontend:
+  name: frontend
+  replicaCount: 1
+  image:
+    repository: erenozcan17/atlas2_frontend
+    pullPolicy: Always
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 80
+
+# Ingress settings
+ingress:
+  enabled: true
+  host: atlas2.deverenozcan.com
+
+# Default values for postgresql databases
+postgres:
+  user:
+    name: postgres-user
+    image: postgres:15-alpine
+    user: user
+    password: password
+    dbname: userdb
+    storage: 1Gi
+    exporter:
+      enabled: true
+      image: quay.io/prometheuscommunity/postgres-exporter:latest
+      port: 9187
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        scrapeTimeout: 10s
+        labels:
+          release: kube-prometheus-stack
+  product:
+    name: postgres-product
+    image: postgres:15-alpine
+    user: user
+    password: password
+    dbname: productdb
+    storage: 1Gi
+    exporter:
+      enabled: true
+      image: quay.io/prometheuscommunity/postgres-exporter:latest
+      port: 9187
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        scrapeTimeout: 10s
+        labels:
+          release: kube-prometheus-stack
+  order:
+    name: postgres-order
+    image: postgres:15-alpine
+    user: user
+    password: password
+    dbname: orderdb
+    storage: 1Gi
+    exporter:
+      enabled: true
+      image: quay.io/prometheuscommunity/postgres-exporter:latest
+      port: 9187
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        scrapeTimeout: 10s
+        labels:
+          release: kube-prometheus-stack

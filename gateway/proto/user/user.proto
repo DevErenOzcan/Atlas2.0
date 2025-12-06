@@ -33,8 +33,81 @@ message ListUsersResponse {
   repeated User users = 1;
 }
 
+// Register Request
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  string ad = 3;
+  string soyad = 4;
+}
+
+// Register Response
+message RegisterResponse {
+  int64 user_id = 1;
+  string email = 2;
+  string message = 3;
+}
+
+// Login Request
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// Login Response
+message LoginResponse {
+  string token = 1;
+  int64 user_id = 2;
+  string email = 3;
+  UserRole role = 4;
+}
+
+// Get User Request
+message GetUserRequest {
+  int64 user_id = 1;
+}
+
+// Get User Response
+message GetUserResponse {
+  User user = 1;
+}
+
+// Update User Request
+message UpdateUserRequest {
+  int64 user_id = 1;
+  string email = 2;
+  string ad = 3;
+  string soyad = 4;
+  UserRole role = 5;
+}
+
+// Update User Response
+message UpdateUserResponse {
+  string message = 1;
+}
+
+// Delete User Request
+message DeleteUserRequest {
+  int64 user_id = 1;
+}
+
+// Delete User Response
+message DeleteUserResponse {
+  string message = 1;
+}
+
 // User Servisi tanımı
 service UserService {
   // Tüm kullanıcıların sadece User tablosundaki verilerini listeler
   rpc ListUsers (ListUsersRequest) returns (ListUsersResponse);
+  // Tekil kullanıcı getirir
+  rpc GetUser (GetUserRequest) returns (GetUserResponse);
+  // Yeni kullanıcı kaydı
+  rpc Register (RegisterRequest) returns (RegisterResponse);
+  // Kullanıcı girişi
+  rpc Login (LoginRequest) returns (LoginResponse);
+  // Kullanıcı günceller (Admin)
+  rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse);
+  // Kullanıcı siler (Admin - soft delete)
+  rpc DeleteUser (DeleteUserRequest) returns (DeleteUserResponse);
 }

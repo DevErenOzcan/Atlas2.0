@@ -1,0 +1,67 @@
+{{- with .Values.postgres.user }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .name }}
+  labels:
+    app: {{ .name }}
+spec:
+  serviceName: {{ .name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .image }}
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_USER
+              value: {{ .user }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .password }}
+            - name: POSTGRES_DB
+              value: {{ .dbname }}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d
+        {{- if .exporter.enabled }}
+        - name: postgres-exporter
+          image: {{ .exporter.image }}
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DATA_SOURCE_NAME
+              value: postgresql://{{ .user }}:{{ .password }}@127.0.0.1:5432/{{ .dbname }}?sslmode=disable
+          ports:
+            - name: metrics
+              containerPort: {{ .exporter.port | default 9187 }}
+          args:
+            - "--web.listen-address=:{{ .exporter.port | default 9187 }}"
+        {{- end }}
+      volumes:
+        - name: init-sql
+          configMap:
+            name: postgres-user-init-sql
+            items:
+              - key: init.sql
+                path: init.sql
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-storage
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .storage }}
+{{- end }}

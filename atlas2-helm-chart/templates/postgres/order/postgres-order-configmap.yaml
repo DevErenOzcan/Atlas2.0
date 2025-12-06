@@ -1,0 +1,10 @@
+{{- with .Values.order }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-order-init-sql
+data:
+  init.sql: |
+{{ $.Files.Get "files/db-inits/order-init.sql" | indent 4 }}
+{{- end }}
+

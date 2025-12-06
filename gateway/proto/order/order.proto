@@ -31,7 +31,40 @@ message ListOrdersResponse {
   repeated Order orders = 1;
 }
 
+// Update Order Status Request
+message UpdateOrderStatusRequest {
+  int64 order_id = 1;
+  bool is_shipped = 2;
+}
+
+// Update Order Status Response
+message UpdateOrderStatusResponse {
+  string message = 1;
+}
+
+// Create Order Request
+message CreateOrderRequest {
+  int64 user_id = 1;
+  repeated OrderItem items = 2;
+}
+
+message OrderItem {
+  int64 product_id = 1;
+  int32 quantity = 2;
+  double price = 3;
+}
+
+// Create Order Response
+message CreateOrderResponse {
+  int64 order_id = 1;
+  string message = 2;
+}
+
 service OrderService {
   rpc ListOrders (ListOrdersRequest) returns (ListOrdersResponse);
+  // Admin - Sipariş durumunu günceller
+  rpc UpdateOrderStatus (UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse);
+  // Yeni sipariş oluşturur
+  rpc CreateOrder (CreateOrderRequest) returns (CreateOrderResponse);
 }
 

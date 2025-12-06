@@ -3,12 +3,11 @@ FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
-# go mod dosyalarını kopyala ve bağımlılıkları indir
-COPY go.mod go.sum ./
-RUN go mod download
-
 # Tüm kaynak kodunu kopyala (proto dahil)
 COPY . .
+
+RUN go mod download
+RUN go mod tidy
 
 # Derleme
 RUN go build -o /gateway_service ./main.go

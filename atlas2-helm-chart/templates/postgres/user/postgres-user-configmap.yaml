@@ -1,0 +1,9 @@
+{{- with .Values.user }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-user-init-sql
+data:
+  init.sql: |
+{{ $.Files.Get "files/db-inits/user-init.sql" | indent 4 }}
+{{- end }}

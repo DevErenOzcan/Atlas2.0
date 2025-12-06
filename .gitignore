@@ -1,0 +1,22 @@
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+
+# Binaries for projects and modules
+*/bin/
+*/pkg/
+*/vendor/
+
+# Service binaries
+user/user
+product/product
+order/order
+gateway/gateway
+
+.idea
